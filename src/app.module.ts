@@ -4,6 +4,10 @@ import { BullModule } from '@nestjs/bullmq';
 import { DatabaseModule } from './database/database.module';
 import { PracticeModule } from './modules/practice/practice.module';
 import { TempleModule } from './modules/temple/temple.module';
+import { UsersModule } from './modules/users/users.module';
+import { DonationsModule } from './modules/donations/donations.module';
+import { BookingsModule } from './modules/bookings/bookings.module';
+import { KarmaModule } from './modules/karma/karma.module';
 
 @Module({
   imports: [
@@ -19,6 +23,10 @@ import { TempleModule } from './modules/temple/temple.module';
     DatabaseModule,
     PracticeModule,
     TempleModule,
+    UsersModule,
+    DonationsModule,
+    BookingsModule,
+    KarmaModule,
   ],
   controllers: [],
   providers: [],

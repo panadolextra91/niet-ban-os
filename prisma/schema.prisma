@@ -3,19 +3,138 @@
 
 generator client {
   provider = "prisma-client-js"
+  previewFeatures = ["omitApi", "relationJoins"] // Bật tính năng xịn
 }
 
 datasource db {
   provider = "postgresql"
 }
 
-// User model for Spiritual Management System
-model User {
-  id        String   @id @default(uuid())
-  email     String   @unique
-  name      String?
-  karma     Int      @default(0)
-  level     Int      @default(1)
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+// ==========================================
+// 🧘 CON NHANG (USER MODEL)
+// ==========================================
+model ConNhang {
+  idString      String       @id @default(uuid())
+  email         String       @unique
+  phapDanh      String?      // Username (VD: Thích Code Dạo)
+  password      String       // Hash (Argon2id)
+  phoneNumber   String?      @unique
+  walletAddress String?      // Solana Wallet cho NFT
+
+  // --- RANK SYSTEM ---
+  rank          MemberRank   @default(TU_TAI_GIA)
+  rankExpiryDate DateTime?   // Ngày hết hạn Rank (Cronjob sẽ quét cái này)
+  
+  // --- KARMA ECONOMY ---
+  currentKarma  Int          @default(0) // Điểm hiện tại
+  totalDonated  Decimal      @default(0) @db.Decimal(19, 4) // Tổng tiền đã nạp (để xét lên Rank)
+  
+  // --- AFK FARMING ---
+  lastKnockTime DateTime?    // Chống spam click
+  isAutoKnock   Boolean      @default(false) // Chỉ VIP mới true
+
+  // --- RELATIONS ---
+  donations     Donation[]
+  bookings      Booking[]
+  karmaLogs     KarmaLog[]
+
+  createdAt     DateTime     @default(now())
+  updatedAt     DateTime     @updatedAt
+
+  @@index([rank])
+  @@index([rankExpiryDate]) // Tối ưu cho Cronjob quét hết hạn
+  @@map("con_nhang")
+}
+
+// ==========================================
+// 💸 CÚNG DƯỜNG (DONATION)
+// ==========================================
+model Donation {
+  id            String         @id @default(uuid())
+  amount        Decimal        @db.Decimal(19, 4)
+  currency      String         @default("VND")
+  message       String?        @db.Text // Lời khấn (để chạy Marquee)
+  status        DonationStatus @default(PENDING)
+  transactionId String?        // Mã giao dịch từ cổng thanh toán (Momo/Stripe)
+
+  // --- RELATIONS ---
+  conNhangId    String
+  conNhang      ConNhang       @relation(fields: [conNhangId], references: [idString])
+
+  createdAt     DateTime       @default(now())
+  updatedAt     DateTime       @updatedAt
+
+  @@map("donations")
+}
+
+// ==========================================
+// 📅 KHÓA TU & BOOKING (PAY-TO-WIN)
+// ==========================================
+model Booking {
+  id            String        @id @default(uuid())
+  slotTime      DateTime      // Giờ gặp thầy
+  status        BookingStatus @default(PENDING)
+  
+  // --- PRIVILEGE FIELDS (Cốt lõi kiếm tiền) ---
+  isFastTrack   Boolean       @default(false) // Vé ưu tiên chen hàng
+  isPrivateRoom Boolean       @default(false) // Bao phòng (x3 tiền)
+  
+  // --- RELATIONS ---
+  conNhangId    String
+  conNhang      ConNhang      @relation(fields: [conNhangId], references: [idString])
+
+  createdAt     DateTime       @default(now())
+  updatedAt     DateTime       @updatedAt
+
+  @@index([slotTime]) // Tối ưu query lịch
+  @@map("bookings")
+}
+
+// ==========================================
+// 📜 SỔ NAM TÀO (KARMA LOGS)
+// ==========================================
+model KarmaLog {
+  id            String      @id @default(uuid())
+  amount        Int         // Số điểm (+ hoặc -)
+  source        KarmaSource
+  metadata      Json?       // Lưu context: { "donationId": "...", "jackpotRound": 1 }
+  
+  // --- RELATIONS ---
+  conNhangId    String
+  conNhang      ConNhang    @relation(fields: [conNhangId], references: [idString])
+
+  createdAt     DateTime    @default(now())
+
+  @@map("karma_logs")
+}
+
+// ==========================================
+// 📿 ENUMS (DANH MỤC TÂM LINH)
+// ==========================================
+enum MemberRank {
+  TU_TAI_GIA  // Free
+  A_LA_HAN    // VIP
+  BO_TAT      // VVIP
+}
+
+enum DonationStatus {
+  PENDING
+  COMPLETED
+  FAILED
+}
+
+enum BookingStatus {
+  PENDING
+  CONFIRMED
+  CANCELLED
+  COMPLETED
+}
+
+enum KarmaSource {
+  DONATION      // Nạp tiền
+  AFK_FARMING   // Tu online
+  JACKPOT       // Nổ hũ
+  DAILY_CHECKIN // Điểm danh
+  SYSTEM_ADJUST // Admin chỉnh sửa (Nghiệp quật)
+  EXPIRED_DEDUCTION // Trừ điểm do hết hạn
 }
