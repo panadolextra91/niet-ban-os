@@ -1,0 +1,48 @@
+# Compiled output
+/dist
+/node_modules
+
+# Logs
+logs
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+lerna-debug.log*
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Environment variables (Thiên Cơ Bất Khả Lộ)
+.env
+.env.test
+.env.production
+.env.local
+
+# Coverage
+/coverage
+
+# TypeScript/Editor
+/tsconfig.tsbuildinfo
+.vscode
+.idea
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.sw?
+
+# Prisma generated files
+/generated/prisma
+
+# Security & Performance Tools (Common)
+.snyk
+.gh-ost
+perf.data
+perf.data.old
+*.prof
+heapdump.heapsnapshot
+
+# Docker logs
+.docker-compose.log
