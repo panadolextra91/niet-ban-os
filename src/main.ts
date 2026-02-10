@@ -1,6 +1,6 @@
-import { NestFactory } from '@nestjs/core';
+import { ValidationPipe, ClassSerializerInterceptor } from '@nestjs/common';
+import { NestFactory, Reflector } from '@nestjs/core';
 import { AppModule } from './app.module';
-import { ValidationPipe } from '@nestjs/common';
 import { SwaggerModule, DocumentBuilder } from '@nestjs/swagger';
 
 async function bootstrap() {
@@ -16,6 +16,9 @@ async function bootstrap() {
       transform: true, // Tự động convert type (ví dụ string "10" thành number 10)
     }),
   );
+
+  // Global Serialization (Sát na giải thoát) 💎
+  app.useGlobalInterceptors(new ClassSerializerInterceptor(app.get(Reflector)));
 
   // Setup Swagger (Kinh Thư API) 📜
   const config = new DocumentBuilder()

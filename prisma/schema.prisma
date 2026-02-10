@@ -3,7 +3,6 @@
 
 generator client {
   provider = "prisma-client-js"
-  previewFeatures = ["omitApi", "relationJoins"] // Bật tính năng xịn
 }
 
 datasource db {
@@ -20,6 +19,10 @@ model ConNhang {
   password      String       // Hash (Argon2id)
   phoneNumber   String?      @unique
   walletAddress String?      // Solana Wallet cho NFT
+
+  // --- ROLE & STATUS ---
+  role          SystemRole   @default(MEMBER)
+  isActive      Boolean      @default(true)
 
   // --- RANK SYSTEM ---
   rank          MemberRank   @default(TU_TAI_GIA)
@@ -42,6 +45,7 @@ model ConNhang {
   updatedAt     DateTime     @updatedAt
 
   @@index([rank])
+  @@index([role])
   @@index([rankExpiryDate]) // Tối ưu cho Cronjob quét hết hạn
   @@map("con_nhang")
 }
@@ -137,4 +141,11 @@ enum KarmaSource {
   DAILY_CHECKIN // Điểm danh
   SYSTEM_ADJUST // Admin chỉnh sửa (Nghiệp quật)
   EXPIRED_DEDUCTION // Trừ điểm do hết hạn
+}
+
+enum SystemRole {
+  MEMBER
+  CHU_TIEU
+  SU_TRUONG
+  TRU_TRI
 }

@@ -18,6 +18,12 @@ export class DonationsController {
         return plainToInstance(DonationResponseDto, donation);
     }
 
+    @Post('webhook')
+    @ApiOperation({ summary: 'Webhook nhận kết quả thanh toán (Mock)' })
+    async handleWebhook(@Body() body: { donationId: string; secretKey: string }) {
+        return this.donationsService.handleWebhook(body.donationId, body.secretKey);
+    }
+
     @Get()
     @ApiOperation({ summary: 'Lịch sử cúng dường' })
     @ApiResponse({ type: [DonationResponseDto] })

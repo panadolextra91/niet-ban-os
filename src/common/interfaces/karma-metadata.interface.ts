@@ -1,19 +1,20 @@
-export interface JackpotMetadata {
-    roundId: number;
-    luckyNumber: number;
+export interface KarmaLogMetadata {
+    donationId?: string;
+    sourceDonationId?: string;
+    jackpotRound?: number;
+    method?: string;
+    reason?: string;
+    adminId?: string;
 }
 
-export interface DonationMetadata {
-    bankTransactionId: string;
-    bankName: string;
-    paymentMethod: string;
+export interface DonationCompletedEvent {
+    user: string;
+    amount: number;
+    rank: string;
 }
 
-export interface SystemAdjustmentMetadata {
-    adminId: string;
-    reason: string;
-    previousKarma: number;
-    newKarma: number;
+export interface JackpotWonEvent {
+    userId: string;
+    bonusKarma: number;
+    message: string;
 }
-
-export type KarmaLogMetadata = JackpotMetadata | DonationMetadata | SystemAdjustmentMetadata;

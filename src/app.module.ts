@@ -8,12 +8,16 @@ import { UsersModule } from './modules/users/users.module';
 import { DonationsModule } from './modules/donations/donations.module';
 import { BookingsModule } from './modules/bookings/bookings.module';
 import { KarmaModule } from './modules/karma/karma.module';
+import { EventEmitterModule } from '@nestjs/event-emitter';
+import { AuthModule } from './modules/auth/auth.module';
+import { AdminModule } from './modules/admin/admin.module';
 
 @Module({
   imports: [
     ConfigModule.forRoot({
       isGlobal: true,
     }),
+    EventEmitterModule.forRoot(),
     BullModule.forRoot({
       connection: {
         host: process.env.REDIS_HOST || 'localhost',
@@ -27,6 +31,8 @@ import { KarmaModule } from './modules/karma/karma.module';
     DonationsModule,
     BookingsModule,
     KarmaModule,
+    AuthModule,
+    AdminModule,
   ],
   controllers: [],
   providers: [],

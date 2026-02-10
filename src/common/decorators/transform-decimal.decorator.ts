@@ -7,6 +7,9 @@ import { Prisma } from '@prisma/client';
  */
 export function TransformDecimal() {
     return Transform(({ value }) => {
+        if (value === null || value === undefined) {
+            return 0;
+        }
         if (value && typeof value === 'object' && 'toNumber' in value) {
             return (value as any).toNumber();
         }
