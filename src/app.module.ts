@@ -11,6 +11,8 @@ import { KarmaModule } from './modules/karma/karma.module';
 import { EventEmitterModule } from '@nestjs/event-emitter';
 import { AuthModule } from './modules/auth/auth.module';
 import { AdminModule } from './modules/admin/admin.module';
+import { GatewayModule } from './modules/gateway/gateway.module';
+import { ScheduleModule } from '@nestjs/schedule';
 
 @Module({
   imports: [
@@ -24,6 +26,7 @@ import { AdminModule } from './modules/admin/admin.module';
         port: parseInt(process.env.REDIS_PORT || '6379', 10),
       },
     }),
+    ScheduleModule.forRoot(),
     DatabaseModule,
     PracticeModule,
     TempleModule,
@@ -33,6 +36,7 @@ import { AdminModule } from './modules/admin/admin.module';
     KarmaModule,
     AuthModule,
     AdminModule,
+    GatewayModule,
   ],
   controllers: [],
   providers: [],

@@ -26,4 +26,8 @@ export class AuthService {
             access_token: this.jwtService.sign(payload),
         };
     }
+
+    async verifyToken(token: string): Promise<JwtPayload> {
+        return this.jwtService.verify(token);
+    }
 }
