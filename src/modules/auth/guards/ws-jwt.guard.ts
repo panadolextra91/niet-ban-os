@@ -19,11 +19,21 @@ export class WsJwtGuard implements CanActivate {
             const jwt = token.replace('Bearer ', '');
             const payload = await this.authService.verifyToken(jwt);
 
-            // IMPORTANT: Store user in socket.data for security (Source of Truth)
-            client.data.user = payload;
+            // 1. Get user from Cache (Source of Truth) using AuthService
+            const user = await this.authService.getUserProfile(payload.sub);
+
+            if (!user || !user.isActive) {
+                throw new UnauthorizedException('User invalid or banned');
+            }
+
+            // 2. Attach check result
+            client.data.user = payload; // Keep payload for lightweight usage
+            // client.data.fullUser = user; // Optional if needed
 
             return true;
         } catch (err) {
+            // 3. Strict Disconnect (Zombie Prevention)
+            client.disconnect(true);
             throw new UnauthorizedException('Invalid token');
         }
     }

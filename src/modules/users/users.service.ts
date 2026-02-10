@@ -1,15 +1,37 @@
 import { Injectable, BadRequestException } from '@nestjs/common';
 import { PrismaService } from '../../database/prisma.service';
 import { MemberRank } from '@prisma/client';
+import { AuthService } from '../auth/auth.service';
 
 @Injectable()
 export class UsersService {
-    constructor(private prisma: PrismaService) { }
+    constructor(
+        private prisma: PrismaService,
+        private authService: AuthService,
+    ) { }
 
     async findOne(id: string) {
         return this.prisma.conNhang.findUnique({
             where: { idString: id },
         });
+    }
+
+    /**
+     * Update Profile (Đổi pháp danh / Info)
+     */
+    async updateProfile(userId: string, data: { phapDanh?: string; phoneNumber?: string }) {
+        const user = await this.prisma.conNhang.update({
+            where: { idString: userId },
+            data: {
+                phapDanh: data.phapDanh,
+                phoneNumber: data.phoneNumber,
+            },
+        });
+
+        // Invalidate Cache IMMEDIATELY
+        await this.authService.invalidateUserProfile(userId);
+
+        return user;
     }
 
     /**
@@ -37,7 +59,7 @@ export class UsersService {
                 data: {
                     conNhangId: userId,
                     amount: karmaGained,
-                    source: 'AFK_FARMING',
+                    source: 'AFK_FARMING', // Ensure this enum exists in usage
                     metadata: { method: 'manual_knock' },
                 },
             });
@@ -65,13 +87,18 @@ export class UsersService {
 
         if (user.rank !== MemberRank.TU_TAI_GIA && user.rankExpiryDate && user.rankExpiryDate < new Date()) {
             // Rank expired, return to TU_TAI_GIA
-            return this.prisma.conNhang.update({
+            const updatedUser = await this.prisma.conNhang.update({
                 where: { idString: userId },
                 data: {
                     rank: MemberRank.TU_TAI_GIA,
                     isAutoKnock: false,
                 },
             });
+
+            // Invalidate Cache IMMEDIATELY (Rank change affects permissions/status)
+            await this.authService.invalidateUserProfile(userId);
+
+            return updatedUser;
         }
         return user;
     }
