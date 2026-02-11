@@ -26,6 +26,7 @@ const MainHall: React.FC<{ user: User, onLogout: () => void }> = ({ user, onLogo
   }, [user.id]);
 
   useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     refreshKarma();
     const timer = setInterval(refreshKarma, 10000);
     return () => clearInterval(timer);
@@ -147,7 +148,8 @@ const RegisterPage: React.FC<{ onRegister: (user: User) => void; onToggleLogin: 
       localStorage.setItem('accessToken', data.accessToken);
       localStorage.setItem('refreshToken', data.refreshToken);
       onRegister(data.user);
-    } catch (e) {
+    } catch (err) {
+      console.error('Registration failed', err);
       alert('Quy y thất bại. Có thể email này đã có chủ!');
     } finally {
       setLoading(false);
@@ -294,6 +296,7 @@ const App: React.FC = () => {
     const token = localStorage.getItem('accessToken');
     const storedUser = localStorage.getItem('user');
     if (token && storedUser) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect
       setUser(JSON.parse(storedUser));
       setAccessToken(token);
     }
