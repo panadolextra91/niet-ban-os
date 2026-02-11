@@ -1,0 +1,19 @@
+@import "tailwindcss";
+
+@theme {
+  --color-temple-gold: #FFD700;
+  --color-temple-red: #8B0000;
+  --font-inter: "Inter", sans-serif;
+}
+
+body {
+  @apply bg-orange-50 text-stone-900 font-sans;
+}
+
+.mõ-scale {
+  transition: transform 0.1s ease-in-out;
+}
+
+.mõ-scale:active {
+  transform: scale(0.9);
+}

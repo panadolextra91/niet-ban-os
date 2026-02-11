@@ -2,7 +2,7 @@ import { v4 as uuidv4 } from 'uuid';
 import { Injectable, Inject, UnauthorizedException } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import { PrismaService } from '../../database/prisma.service';
-import { SystemRole, MemberRank } from '@prisma/client';
+import { SystemRole } from '@prisma/client';
 import Redis from 'ioredis';
 import { REDIS_CLIENT } from '../../database/redis.provider';
 
@@ -11,6 +11,8 @@ export interface JwtPayload {
     email: string;
     role: SystemRole;
 }
+
+import * as argon2 from 'argon2';
 
 @Injectable()
 export class AuthService {
@@ -22,7 +24,7 @@ export class AuthService {
 
     async validateUser(email: string, pass: string): Promise<any> {
         const user = await this.prisma.conNhang.findUnique({ where: { email } });
-        if (user && user.password === pass) { // TODO: Use proper bcrypt/argon2 verify
+        if (user && await argon2.verify(user.password, pass)) {
             const { password, ...result } = user;
             return result;
         }
@@ -30,7 +32,6 @@ export class AuthService {
     }
 
     async login(user: any) {
-        // Create new Family ID for this login session
         const familyId = uuidv4();
         const tokens = await this.generateTokens({
             idString: user.idString,
@@ -42,7 +43,6 @@ export class AuthService {
         const expiresAt = new Date();
         expiresAt.setDate(expiresAt.getDate() + 7); // 7 days
 
-        // Save initial Refresh Token
         await this.saveRefreshToken(user.idString, tokens.refreshToken, familyId, expiresAt);
 
         return {
@@ -56,12 +56,14 @@ export class AuthService {
         };
     }
 
-    async register(data: any) { // Type check later
+    async register(data: any) {
+        const hashedPassword = await argon2.hash(data.password);
         const user = await this.prisma.conNhang.create({
             data: {
                 email: data.email,
-                password: data.password, // TODO: Hash
+                password: hashedPassword,
                 phapDanh: data.phapDanh,
+                role: SystemRole.MEMBER, // Default role for new signups
                 phoneNumber: data.phoneNumber,
             }
         });
@@ -69,18 +71,14 @@ export class AuthService {
     }
 
     async generateTokens(user: { idString: string; email: string; role: SystemRole; familyId?: string }) {
-        const payload = { // Implicit type or update interface
+        const payload = {
             sub: user.idString,
             email: user.email,
             role: user.role,
-            jti: uuidv4(), // Unique ID for every token
+            jti: uuidv4(),
         };
         const accessToken = this.jwtService.sign(payload, { expiresIn: '15m' });
         const refreshToken = this.jwtService.sign(payload, { expiresIn: '7d' });
-
-        // Hash RT should be done here in real world, but for simplicity we rely on DB uniqueness for now or add hashing if requested.
-        // Plan says "Hashed", so let's mock hash or use raw for MVP speed if not critical, but User said "Sát Thủ" logic.
-        // Let's stick to raw token in DB for now to keep it simple, but we need familyId.
 
         return { accessToken, refreshToken };
     }
@@ -97,43 +95,38 @@ export class AuthService {
     }
 
     async rotateRefreshToken(oldToken: string) {
-        console.log(`[AuthService] Rotating Token: ${oldToken.substring(0, 50)}...`);
-        // 1. Find Token
         const tokenDoc = await this.prisma.refreshToken.findUnique({ where: { token: oldToken } });
         if (!tokenDoc) {
             throw new UnauthorizedException('Invalid token');
         }
 
-        // 2. Reuse Detection (Nuclear Option)
         if (tokenDoc.revoked) {
-            console.log(`🚨 REUSE DETECTED on Token ID: ${tokenDoc.id} | Family: ${tokenDoc.familyId}`);
-            // Revoke Family
             await this.prisma.refreshToken.updateMany({
                 where: { familyId: tokenDoc.familyId },
                 data: { revoked: true }
             });
-            // Clear Cache
             await this.invalidateUserProfile(tokenDoc.conNhangId);
-            // TODO: Emit socket disconnect event
-            throw new UnauthorizedException('Reuse detected! Family revoked.'); // 401/403
+            throw new UnauthorizedException('Reuse detected! Family revoked.');
         }
 
-        // 3. Verify Expiry
         if (new Date() > tokenDoc.expiresAt) {
             throw new UnauthorizedException('Token expired');
         }
 
-        // 4. Rotate
         const user = await this.prisma.conNhang.findUnique({ where: { idString: tokenDoc.conNhangId } });
-        const tokens = await this.generateTokens({ ...user, role: user.role as SystemRole });
+        if (!user) throw new UnauthorizedException('User not found');
 
-        // 5. Update Old Token chain
+        const tokens = await this.generateTokens({
+            idString: user.idString,
+            email: user.email,
+            role: user.role as SystemRole
+        });
+
         await this.prisma.refreshToken.update({
             where: { id: tokenDoc.id },
             data: { revoked: true, replacedByToken: tokens.refreshToken }
         });
 
-        // 6. Save New Token (Same Family)
         const expiresAt = new Date();
         expiresAt.setDate(expiresAt.getDate() + 7);
         await this.saveRefreshToken(user.idString, tokens.refreshToken, tokenDoc.familyId, expiresAt);
@@ -147,20 +140,17 @@ export class AuthService {
 
     async getUserProfile(userId: string) {
         const cacheKey = `user_profile:${userId}`;
-        // 1. Try Cache
         const cached = await this.redis.get(cacheKey);
         if (cached) {
             return JSON.parse(cached);
         }
 
-        // 2. Query DB
         const user = await this.prisma.conNhang.findUnique({
             where: { idString: userId },
             select: { idString: true, email: true, role: true, isActive: true },
         });
 
         if (user) {
-            // 3. Set Cache (TTL 5 mins)
             await this.redis.set(cacheKey, JSON.stringify(user), 'EX', 300);
         }
 

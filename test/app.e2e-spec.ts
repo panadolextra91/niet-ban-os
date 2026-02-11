@@ -13,13 +13,13 @@ describe('AppController (e2e)', () => {
     }).compile();
 
     app = moduleFixture.createNestApplication();
+    app.setGlobalPrefix('api/v1'); // Match main.ts
     await app.init();
   });
 
-  it('/ (GET)', () => {
+  it('/api/v1/donations (GET)', () => {
     return request(app.getHttpServer())
-      .get('/')
-      .expect(200)
-      .expect('Hello World!');
+      .get('/api/v1/donations')
+      .expect(200);
   });
 });

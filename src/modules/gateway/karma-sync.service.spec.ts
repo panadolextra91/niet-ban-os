@@ -61,9 +61,9 @@ describe('KarmaSyncService', () => {
             expect(mockRedis.set).toHaveBeenCalledWith(
                 'lock:karma_sync',
                 'locked',
-                'NX',
                 'EX',
                 9,
+                'NX',
             );
             expect(mockRedis.smembers).not.toHaveBeenCalled(); // Should stop here
         });

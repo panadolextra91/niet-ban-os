@@ -4,8 +4,10 @@ import { KarmaSyncService } from './karma-sync.service';
 import { AuthModule } from '../auth/auth.module';
 import { redisProvider } from '../../database/redis.provider';
 
+import { DatabaseModule } from '../../database/database.module';
+
 @Module({
-    imports: [AuthModule],
+    imports: [AuthModule, DatabaseModule],
     providers: [AppGateway, KarmaSyncService, redisProvider],
     exports: [AppGateway],
 })

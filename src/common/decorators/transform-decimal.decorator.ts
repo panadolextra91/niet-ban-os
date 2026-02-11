@@ -10,7 +10,8 @@ export function TransformDecimal() {
         if (value === null || value === undefined) {
             return 0;
         }
-        if (value && typeof value === 'object' && 'toNumber' in value) {
+        // Handle Prisma Decimal object
+        if (typeof value === 'object' && value !== null && 'toNumber' in value && typeof (value as any).toNumber === 'function') {
             return (value as any).toNumber();
         }
         return value;

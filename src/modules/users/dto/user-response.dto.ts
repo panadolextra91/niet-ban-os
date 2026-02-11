@@ -15,7 +15,7 @@ export class UserResponseDto {
 
     @ApiProperty({ required: false })
     @Expose()
-    phapDanh: string;
+    phapDanh?: string;
 
     @ApiProperty({ enum: MemberRank })
     @Expose()
@@ -23,7 +23,7 @@ export class UserResponseDto {
 
     @ApiProperty({ required: false })
     @Expose()
-    rankExpiryDate: Date;
+    rankExpiryDate?: Date;
 
     @ApiProperty()
     @Expose()

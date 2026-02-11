@@ -14,9 +14,11 @@ import Redis from 'ioredis';
 import { AuthService } from '../auth/auth.service';
 import { WsJwtGuard } from '../auth/guards/ws-jwt.guard';
 import { REDIS_CLIENT } from '../../database/redis.provider';
+import { PrismaService } from '../../database/prisma.service';
 
 @WebSocketGateway({
     namespace: '/temple',
+    transports: ['websocket'],
     cors: {
         origin: '*', // Allow all for now, tighten later
     },
@@ -27,6 +29,7 @@ export class AppGateway implements OnGatewayConnection, OnGatewayDisconnect {
 
     constructor(
         private authService: AuthService,
+        private prisma: PrismaService,
         @Inject(REDIS_CLIENT) private redis: Redis,
     ) { }
 
@@ -51,11 +54,13 @@ export class AppGateway implements OnGatewayConnection, OnGatewayDisconnect {
         console.log(`Client disconnected: ${client.id}`);
     }
 
-    @UseGuards(WsJwtGuard)
     @SubscribeMessage('knock_mo')
     async handleKnockMo(@ConnectedSocket() client: Socket) {
         const user = client.data.user;
-        if (!user) return; // Should be handled by Guard but safety first
+        if (!user) {
+            console.warn(`[Gateway] Unauthenticated knock attempt from ${client.id}`);
+            return;
+        }
 
         const userId = user.sub;
         const rateLimitKey = `rate_limit_knock:${userId}`;
@@ -76,6 +81,7 @@ export class AppGateway implements OnGatewayConnection, OnGatewayDisconnect {
         }
 
         // 2. High Performance Buffer (Write-Behind)
+        console.log(`[Gateway] Knock received for user ${userId}`);
         await this.redis.pipeline()
             .incr(karmaBufferKey)
             .sadd(activeSetKey, userId)
@@ -87,6 +93,7 @@ export class AppGateway implements OnGatewayConnection, OnGatewayDisconnect {
 
     @OnEvent('donation.completed')
     handleDonationCompleted(payload: any) {
+        console.log(`[Gateway] Broadcasting donation from ${payload.email}`);
         this.server.emit('marquee_new_prayer', payload);
     }
 

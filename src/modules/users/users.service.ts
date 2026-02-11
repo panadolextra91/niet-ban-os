@@ -59,7 +59,7 @@ export class UsersService {
                 data: {
                     conNhangId: userId,
                     amount: karmaGained,
-                    source: 'AFK_FARMING', // Ensure this enum exists in usage
+                    source: 'AFK_FARMING',
                     metadata: { method: 'manual_knock' },
                 },
             });
@@ -95,11 +95,29 @@ export class UsersService {
                 },
             });
 
-            // Invalidate Cache IMMEDIATELY (Rank change affects permissions/status)
+            // Invalidate Cache IMMEDIATELY
             await this.authService.invalidateUserProfile(userId);
 
             return updatedUser;
         }
+        return user;
+    }
+
+    /**
+     * Mock Donation Logic
+     */
+    async mockDonate(userId: string, amount: number) {
+        const user = await this.prisma.conNhang.update({
+            where: { idString: userId },
+            data: {
+                totalDonated: { increment: amount },
+                currentKarma: { increment: Math.floor(amount / 1000) },
+            },
+        });
+
+        // Invalidate Cache
+        await this.authService.invalidateUserProfile(userId);
+
         return user;
     }
 }

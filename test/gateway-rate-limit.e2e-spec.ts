@@ -11,6 +11,7 @@ import { WsJwtGuard } from '../src/modules/auth/guards/ws-jwt.guard';
 import { JwtService } from '@nestjs/jwt';
 import { REDIS_CLIENT } from '../src/database/redis.provider';
 import { ConfigService } from '@nestjs/config';
+import { PrismaService } from '../src/database/prisma.service';
 
 describe('Gateway Rate Limit (e2e)', () => {
     let app: INestApplication;
@@ -54,6 +55,7 @@ describe('Gateway Rate Limit (e2e)', () => {
                 { provide: JwtService, useValue: { sign: () => 'valid.jwt.token' } },
                 { provide: REDIS_CLIENT, useValue: mockRedis },
                 { provide: ConfigService, useValue: mockConfigService },
+                { provide: PrismaService, useValue: {} },
                 WsJwtGuard,
             ],
         })

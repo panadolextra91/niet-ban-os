@@ -23,15 +23,18 @@ export class WsJwtGuard implements CanActivate {
             const user = await this.authService.getUserProfile(payload.sub);
 
             if (!user || !user.isActive) {
+                console.error(`[WsJwtGuard] User invalid or banned: ${payload.sub}`);
                 throw new UnauthorizedException('User invalid or banned');
             }
 
+            console.log(`[WsJwtGuard] Success for user ${payload.email}`);
             // 2. Attach check result
             client.data.user = payload; // Keep payload for lightweight usage
             // client.data.fullUser = user; // Optional if needed
 
             return true;
         } catch (err) {
+            console.error('[WsJwtGuard] Auth failed', err.message);
             // 3. Strict Disconnect (Zombie Prevention)
             client.disconnect(true);
             throw new UnauthorizedException('Invalid token');

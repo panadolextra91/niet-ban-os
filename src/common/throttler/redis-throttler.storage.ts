@@ -38,7 +38,7 @@ export class RedisThrottlerStorage implements ThrottlerStorage {
             totalHits,
             timeToExpire: timeToExpire > 0 ? timeToExpire : 0,
             isBlocked,
-            timeToBlock,
-        };
+            timeToBlock: isBlocked ? Math.ceil(blockDuration / 1000) : 0,
+        } as any;
     }
 }

@@ -21,7 +21,7 @@ export class KarmaSyncService {
   async handleCron() {
     // 1. Redlock: Try to acquire lock
     // SET lock key only if not exists (NX) with expiration (EX)
-    const acquired = await this.redis.set(this.LOCK_KEY, 'locked', 'NX', 'EX', this.LOCK_TTL);
+    const acquired = await this.redis.set(this.LOCK_KEY, 'locked', 'EX', this.LOCK_TTL, 'NX');
     if (!acquired) {
       this.logger.debug('Skipping sync: Lock already acquired.');
       return;
