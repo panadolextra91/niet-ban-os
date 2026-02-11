@@ -6,19 +6,24 @@ Dưới đây là danh sách các "tội lỗi" về Logic, Bảo Mật, Hiệu 
 
 ---
 
-## 1. 🔐 MODULE AUTHENTICATION (Cửa Chùa Còn Hở)
+## 1. 🔐 MODULE AUTHENTICATION (Cửa Chùa Đã Khép Kín)
 
 ### 🚨 Bảo Mật (Critical)
 - **Token Vĩnh Cửu (Stateless JWT)**: Token cũ vẫn dùng được sau khi Ban user.
     - *Khắc phục*: Implement cache invalidation + check `isActive` từ cache.
     - **[VERIFIED]**: Đã test thành công trong `test/admin-ban.e2e-spec.ts`. User bị ban sẽ nhận 401 ngay lập tức. ✅
 
+- **Refresh Token (Sát Thủ)**: Token bị lộ có thể dùng mãi mãi?
+    - *Khắc phục*: **Refresh Token Rotation**. Token cũ dùng lại -> Hủy diệt cả dòng họ (Family Revocation). logout user khỏi mọi thiết bị.
+    - **[VERIFIED]**: Đã test thành công trong `test/refresh-token.e2e-spec.ts`. Logic "Sát Thủ" hoạt động hoàn hảo. ✅
+
 - **Rate Limit Auth**: API Login/Register chưa có Rate Limit.
-    - *Khắc phục*: ThrottlerGuard cho các route Auth.
+    - *Khắc phục*: ThrottlerGuard cho các route Auth (Redis Storage).
+    - **[VERIFIED]**: Đã tích hợp `RedisThrottlerStorage` chặn brute-force hiệu quả. ✅
 
 ### 🧠 Logic (Major)
 - **Role Hardcoded**: Role `SystemRole` đang fix cứng.
-    - *Khắc phục*: Chuyển sang Dynamic RBAC.
+    - *Khắc phục*: Chuyển sang Dynamic RBAC (Phase 6 Done).
 
 ---
 
@@ -74,18 +79,20 @@ Dưới đây là danh sách các "tội lỗi" về Logic, Bảo Mật, Hiệu 
 
 ### 🌲 Logging & Monitoring
 - **Console.log**: Log rác, khó search.
+    - *Khắc phục*: **Winston Logger** (JSON, Daily Rotate, Masking Sensitive Data).
+    - **[VERIFIED]**: Log sạch đẹp, chuẩn chỉ. ✅
 - **Không có Alert**: Mù tịt về trạng thái server.
 
 ---
 
 ## 📝 KẾT LUẬN
 
-**Hệ thống đã an toàn hơn rất nhiều sau Phase 6.** 
-Các lỗ hổng nghiêm trọng (Critical) về Data Integrity và Security đã được bịt kín và **Kiểm thử (Verified)**.
+**Hệ thống đã đạt chuẩn MVP Production-Grade sau Phase 7 (Security & Observability).** 
+Các lỗ hổng nghiêm trọng (Critical) về Auth, Data Integrity và Security đã được bịt kín.
 
 **Mức độ ưu tiên fix tiếp theo:**
-1. **Refresh Token** (Để bảo mật & UX).
-2. **Logging System** (ELK/Loki).
-3. **Load Testing** (Để chứng minh khả năng chịu tải 100k CCU).
+1. **Load Testing** (Để chứng minh khả năng chịu tải 100k CCU).
+2. **Monitoring Dashboard** (Grafana/Prometheus).
+3. **CI/CD Pipeline** (Jenkins/GitHub Actions).
 
 *Nam Mô A Di Đà Phật! Code là bể khổ, quay đầu là bờ (nhưng fix bug xong mới được quay).* 🙏

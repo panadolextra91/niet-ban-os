@@ -44,7 +44,20 @@ Hiện tại hệ thống đã hoàn thành **Phase 6: Quality Assurance**. Các
 
 ### ✅ Đã hoàn thành (Implemented)
 
-#### A. Gateway Flow (Rate Limiting)
+#### B. Refresh Token Flow (Sát Thủ)
+- **Source**: `test/refresh-token.e2e-spec.ts`
+- **Scenario Verified**:
+    1. **Login**: User nhận Access + Refresh Token (Pair).
+    2. **Refresh (Normal)**:
+        - Token cũ bị **Revoked** & **Replaced** bởi token mới.
+        - Trả về Pair mới cho client.
+    3. **Reuse Detection (Nuclear Option)**:
+        - Hacker (hoặc User cũ) cố tình dùng Token cũ để refresh.
+        - Hệ thống phát hiện `revoked=true`.
+        - **HỦY DIỆT**: Thu hồi toàn bộ token family (đá văng mọi session).
+        - Xóa Cache User Profile.
+
+#### C. Gateway Flow (Rate Limiting)
 - **Source**: `test/gateway-rate-limit.e2e-spec.ts`
 - **Scenario Verified**:
     1. Client connect vào Socket `/temple`.

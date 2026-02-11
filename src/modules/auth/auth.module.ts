@@ -7,6 +7,8 @@ import { JwtStrategy } from './strategies/jwt.strategy';
 import { JwtAuthGuard } from './guards/jwt-auth.guard';
 import { RolesGuard } from './guards/roles.guard';
 
+import { AuthController } from './auth.controller';
+
 @Module({
     imports: [
         PassportModule,
@@ -15,10 +17,11 @@ import { RolesGuard } from './guards/roles.guard';
             inject: [ConfigService],
             useFactory: async (configService: ConfigService) => ({
                 secret: configService.get<string>('JWT_SECRET'),
-                signOptions: { expiresIn: '1d' },
+                signOptions: { expiresIn: '15m' }, // Short expiry for Access Token
             }),
         }),
     ],
+    controllers: [AuthController],
     providers: [AuthService, JwtStrategy, JwtAuthGuard, RolesGuard],
     exports: [AuthService, JwtAuthGuard, RolesGuard],
 })

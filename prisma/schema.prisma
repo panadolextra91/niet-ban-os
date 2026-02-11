@@ -40,6 +40,7 @@ model ConNhang {
   donations     Donation[]
   bookings      Booking[]
   karmaLogs     KarmaLog[]
+  refreshTokens RefreshToken[]
 
   createdAt     DateTime     @default(now())
   updatedAt     DateTime     @updatedAt
@@ -48,6 +49,28 @@ model ConNhang {
   @@index([role])
   @@index([rankExpiryDate]) // Tối ưu cho Cronjob quét hết hạn
   @@map("con_nhang")
+}
+
+// ==========================================
+// 🔄 REFRESH TOKEN (SECURITY)
+// ==========================================
+model RefreshToken {
+  id              String   @id @default(uuid())
+  token           String   @unique // Hashed (SHA256)
+  
+  conNhangId      String
+  conNhang        ConNhang @relation(fields: [conNhangId], references: [idString], onDelete: Cascade)
+  
+  expiresAt       DateTime
+  revoked         Boolean  @default(false)
+  replacedByToken String?  // Token mới thay thế token này (Rotation)
+  familyId        String   // UUID để group các token cùng 1 lứa (Family)
+
+  createdAt       DateTime @default(now())
+  
+  @@index([token])
+  @@index([familyId])
+  @@map("refresh_tokens")
 }
 
 // ==========================================
