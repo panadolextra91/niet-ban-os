@@ -8,6 +8,7 @@ import { AuthService } from '../src/modules/auth/auth.service';
 import { JwtService } from '@nestjs/jwt';
 import { SystemRole } from '@prisma/client';
 import { ThrottlerGuard } from '@nestjs/throttler';
+import * as argon2 from 'argon2';
 
 describe('RefreshToken (E2E)', () => {
     let app: INestApplication;
@@ -57,9 +58,10 @@ describe('RefreshToken (E2E)', () => {
         await prisma.refreshToken.deleteMany();
         await prisma.conNhang.deleteMany({ where: { email: testUser.email } });
 
-        // Create User
+        // Create User (Hash password)
+        const hashedPassword = await argon2.hash(testUser.password);
         const user = await prisma.conNhang.create({
-            data: { ...testUser }
+            data: { ...testUser, password: hashedPassword }
         });
         userId = user.idString;
     });

@@ -18,6 +18,7 @@ import { ConfigService } from '@nestjs/config';
 import { PassportModule } from '@nestjs/passport';
 import { JwtStrategy } from '../src/modules/auth/strategies/jwt.strategy';
 import { Reflector } from '@nestjs/core';
+import { EventEmitterModule } from '@nestjs/event-emitter';
 
 describe('Admin Ban Flow (e2e)', () => {
     let app: INestApplication;
@@ -80,6 +81,7 @@ describe('Admin Ban Flow (e2e)', () => {
                     secret: 'test-secret',
                     signOptions: { expiresIn: '1d' },
                 }),
+                EventEmitterModule.forRoot(),
             ],
             controllers: [AdminController, UsersController],
             providers: [
