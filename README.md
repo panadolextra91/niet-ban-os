@@ -1,5 +1,15 @@
 # Niết Bàn OS (Niet-Ban-OS) 🙏
 
+![NestJS](https://img.shields.io/badge/NestJS-E0234E?style=for-the-badge&logo=nestjs&logoColor=white)
+![PostgreSQL](https://img.shields.io/badge/PostgreSQL-4169E1?style=for-the-badge&logo=postgresql&logoColor=white)
+![Redis](https://img.shields.io/badge/Redis-DC382D?style=for-the-badge&logo=redis&logoColor=white)
+![Docker](https://img.shields.io/badge/Docker-2496ED?style=for-the-badge&logo=docker&logoColor=white)
+
+![Trạng thái](https://img.shields.io/badge/Trạng%20thái-Đang%20hành%20pháp-blueviolet?style=flat-square)
+![Karma](https://img.shields.io/badge/Karma-Vô%20lượng%20công%20đức-FFD700?style=flat-square)
+![Security](https://img.shields.io/badge/Bảo%20mật-Kim%20Cương%20Bất%20Hoại-red?style=flat-square)
+![Concurrency](https://img.shields.io/badge/Redlock-Chống%20vã%20nghiệp-blue?style=flat-square)
+
 **Hệ thống Quản lý Chùa chiền & Tu tập Online (SaaS) - Chuyên nghiệp và Tâm linh.**
 
 Niết Bàn OS là một nền tảng hiện đại dành cho các cơ sở tôn giáo, kết hợp giữa quản trị truyền thống và trải nghiệm "Gamify" (Game hóa) việc tu tập. Hệ thống được xây dựng với kiến trúc Microservices (Modular Monolith), đảm bảo tính bền vững "Kim Cương bất hoại".
