@@ -1,73 +1,49 @@
-# React + TypeScript + Vite
+# Niết Bàn OS - Giao diện Chánh Điện (Frontend) 🏯
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+Giao diện hiện đại, tối giản và mang phong cách thiền định, được xây dựng bằng **React + Vite**.
 
-Currently, two official plugins are available:
+## ✨ Các Tính năng Hiện có (UI Features)
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Babel](https://babeljs.io/) (or [oxc](https://oxc.rs) when used in [rolldown-vite](https://vite.dev/guide/rolldown)) for Fast Refresh
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/) for Fast Refresh
+### 1. Sảnh Chánh Điện (Main Hall)
+- Giao diện Dashboard trung tâm hiển thị thông tin người dùng.
+- Hiển thị điểm **Karma** thời gian thực (Real-time update).
+- Tích hợp nút **Cúng dường (Mock)** và **Tự hủy (Self-Ban)** để kiểm thử hạ tầng.
 
-## React Compiler
+### 2. Pháp Khí Mõ (The Mõ Component)
+- Linh hồn của ứng dụng: Cho phép người dùng gõ mõ online.
+- Hiệu ứng âm thanh chân thực (`coc.mp3`).
+- Animation mượt mà với `Framer Motion` (+1 Karma khi gõ).
+- Tích hợp **Debounce** để bảo vệ hệ thống khỏi spam click.
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
+### 3. Hệ thống Thông báo Real-time
+- Lắng nghe sự kiện từ WebSocket (`Socket.io`).
+- Hiển thị thông báo khi có người cúng dường hoặc nổ hũ Jackpot.
+- Tự động đồng bộ kết nối khi người dùng Đăng nhập/Đăng xuất.
 
-## Expanding the ESLint configuration
+### 4. Đăng nhập & Quy y (Auth Flow)
+- Giao diện Đăng nhập và Đăng ký (Cạo đầu quy y) chuyên nghiệp.
+- Xử lý xác thực qua JWT với cơ chế tự động refresh token.
 
-If you are developing a production application, we recommend updating the configuration to enable type-aware lint rules:
+## 🚧 Các mảng còn trống (UI Gaps - Backend Ready)
 
-```js
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
+Hệ thống Backend đã hoàn thiện các API sau, nhưng Frontend chưa xây dựng UI:
 
-      // Remove tseslint.configs.recommended and replace with this
-      tseslint.configs.recommendedTypeChecked,
-      // Alternatively, use this for stricter rules
-      tseslint.configs.strictTypeChecked,
-      // Optionally, add this for stylistic rules
-      tseslint.configs.stylisticTypeChecked,
+1.  **Bảng Điều Khiển Trụ Trì (Admin Dashboard)**: Giao diện quản lý con nhang, xem danh sách người dùng và thực hiện ban/unban.
+2.  **Lịch sử Cúng dường (Donation History)**: Trang hiển thị toàn bộ lịch sử nạp tiền và lời khấn của thí chủ.
+3.  **Hệ thống Khóa Tu (Booking System)**: Giao diện chọn giờ gặp thầy, đặt slot tu tập (bao gồm cả vé ưu tiên Fast-Track).
+4.  **Hồ sơ Con nhang (User Profile)**: Trang cập nhật thông tin cá nhân (Số điện thoại, Pháp danh, Địa chỉ ví).
+5.  **Bảng Phong Thần (Leaderboard)**: Xếp hạng các con nhang dựa trên điểm Karma và Phẩm bậc tu hành.
 
-      // Other configs...
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
+## 🛠️ Chạy Frontend Locally
+
+```bash
+# Vào thư mục frontend
+cd frontend
+
+# Cài đặt
+npm install
+
+# Chạy dev server
+npm run dev
 ```
-
-You can also install [eslint-plugin-react-x](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-x) and [eslint-plugin-react-dom](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-dom) for React-specific lint rules:
-
-```js
-// eslint.config.js
-import reactX from 'eslint-plugin-react-x'
-import reactDom from 'eslint-plugin-react-dom'
-
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
-      // Enable lint rules for React
-      reactX.configs['recommended-typescript'],
-      // Enable lint rules for React DOM
-      reactDom.configs.recommended,
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
-```
+*Lưu ý: Đảm bảo Backend đang chạy ở port 3000 để proxy hoạt động chính xác.*

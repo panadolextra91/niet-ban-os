@@ -1,72 +1,76 @@
-# Niet-Ban-OS (Spiritual Management System)
+# Niết Bàn OS (Niet-Ban-OS) 🙏
 
-🙏 **A SaaS Platform for Temple Management & Online Practice Gamification**
+**Hệ thống Quản lý Chùa chiền & Tu tập Online (SaaS) - Chuyên nghiệp và Tâm linh.**
 
-## Tech Stack
-- **Framework**: [NestJS](https://nestjs.com/) (Modular Architecture)
-- **Language**: TypeScript
-- **Database**: PostgreSQL with [Prisma ORM](https://www.prisma.io/)
-- **Caching/Queue**: Redis + [BullMQ](https://docs.bullmq.io/)
-- **Real-time**: [Socket.io](https://socket.io/)
-- **Containerization**: Docker
-- **Validation**: `class-validator` & `class-transformer`
+Niết Bàn OS là một nền tảng hiện đại dành cho các cơ sở tôn giáo, kết hợp giữa quản trị truyền thống và trải nghiệm "Gamify" (Game hóa) việc tu tập. Hệ thống được xây dựng với kiến trúc Microservices (Modular Monolith), đảm bảo tính bền vững "Kim Cương bất hoại".
 
-## Folder Structure
-The project follows a **Modular Architecture**. Each feature is encapsulated in its own directory under `src/modules`.
+## 📜 Các Tính năng Cốt lõi
 
-```text
-src/
-├── common/             # Global filters, interceptors, pipes
-├── database/           # Database module & Prisma service
-├── queue/              # Queue configuration
-├── modules/            # Feature modules
-│   ├── practice/       # Practice & Gamification logic
-│   │   ├── dto/        # Data Transfer Objects
-│   │   ├── entities/   # Database Entities
-│   │   ├── controllers/
-│   │   ├── services/
-│   │   ├── gateways/   # Socket.io Gateways
-│   │   └── practice.module.ts
-│   └── temple/         # Temple management
-│       ├── ...
-└── app.module.ts       # Root module
-```
+### 1. Hệ thống Công đức (Karma Economy)
+- **Tích lũy Karma**: Người dùng có thể "Gõ Mõ" để tích lũy điểm Karma.
+- **Đồng bộ Real-time**: Sử dụng **Redis** làm buffer và **Redlock** để đảm bảo không xảy ra Race Condition khi đồng bộ dữ liệu từ cache vào Database.
+- **Phân bậc (Ranking)**: Tự động thăng hạng (VIP/VVIP) dựa trên mức độ cúng dường và tu tập.
 
-## Setup & Running
+### 2. Bảo mật & Xác thực (Security)
+- **Refresh Token Rotation**: Cơ chế xoay vòng token giúp bảo mật tuyệt đối. Nếu phát hiện token cũ được sử dụng lại, hệ thống sẽ tự động vô hiệu hóa toàn bộ "Family Token" của người dùng đó (**Nuclear Option**).
+- **Hashing**: Sử dụng thuật toán **Argon2id** hiện đại nhất để băm mật khẩu.
+- **RBAC**: Phân quyền chi tiết (Mở rộng từ Member, Chủ Tứ, Sư Trưởng đến Trụ Trì).
 
-### 1. Requirements
+### 3. Cúng dường & Thông báo (Donations & Real-time)
+- **REST + WebSocket Hybrid**: Dữ liệu cúng dường được lưu trữ qua REST API để đảm bảo tính toàn vẹn, sau đó được phát thông báo qua **Socket.io** đến toàn bộ sảnh Chánh Điện.
+- **Marquee Notifications**: Hiển thị lời cầu nguyện và tên thí chủ ngay lập tức trên màn hình.
+
+### 4. Hệ thống Phòng thủ (Hộ Pháp)
+- **Rate Limiting**: Giới hạn tần suất gọi API và gõ mõ để chống spam (Throttler).
+- **CI/CD**: Tự động kiểm tra code (Lint, Build, Unit Test, E2E Test) trên Github Actions trước khi triển khai.
+
+## 🛠️ Công nghệ Sử dụng
+- **Backend**: NestJS, PostgreSQL (Prisma ORM), Redis (BullMQ), Socket.io.
+- **Frontend**: React (Vite), Tailwind CSS, Framer Motion.
+- **Infrastructure**: Docker & Docker Compose.
+
+## 🚀 Hướng dẫn Cài đặt & Chạy ứng dụng
+
+### 1. Yêu cầu hệ thống
 - Node.js (v20+)
 - Docker & Docker Compose
-- NPM
+- NPM / PNPM
 
-### 2. Installation
+### 2. Cài đặt Dependencies
 ```bash
 npm install
+cd frontend && npm install && cd ..
 ```
 
-### 3. Database & Cache (Docker)
+### 3. Khởi chạy Hạ tầng (Postgres & Redis)
 ```bash
 docker-compose up -d
 ```
 
-### 4. Prisma Setup
+### 4. Thiết lập Database & Seed Dữ liệu
 ```bash
-npx prisma generate
-```
+# Tạo schema và generate client
+npx prisma db push
 
-### 5. Running the App
+# Tạo dữ liệu mẫu (Tài khoản Trụ Trì Admin)
+npx prisma db seed
+```
+*Tài khoản Admin mặc định sau khi seed:*
+- **Email**: `tru-tri@nietban.com`
+- **Password**: `admin123`
+
+### 5. Chạy Ứng dụng
 ```bash
-# Development
+# Chạy Backend (Cổng 3000)
 npm run start:dev
 
-# Production
-npm run build
-npm run start:prod
+# Chạy Frontend (Cổng 5173 - Auto proxy qua 3000)
+cd frontend && npm run dev
 ```
 
-## Tone & Philosophy
-- **Serious Backend**: Clean code, SOLID principles, and high performance.
-- **Gamified Frontend**: Engagement-driven features for spiritual practice (Karma points, Leveling, Zen sessions).
+## 📖 Tài liệu API (Kinh Thư API)
+Hệ thống tích hợp sẵn **Swagger UI**. Sau khi khởi chạy Backend, hãy truy cập:
+👉 [http://localhost:3000/docs](http://localhost:3000/docs)
 
 ---
-*Namo Buddhaya!*
+*Nam Mô A Di Đà Phật! Chúc các thí chủ code vui vẻ.*
