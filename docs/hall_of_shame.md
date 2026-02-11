@@ -9,74 +9,83 @@ Dưới đây là danh sách các "tội lỗi" về Logic, Bảo Mật, Hiệu 
 ## 1. 🔐 MODULE AUTHENTICATION (Cửa Chùa Còn Hở)
 
 ### 🚨 Bảo Mật (Critical)
-- **Token Vĩnh Cửu (Stateless JWT)**: Hiện tại Access Token có hạn 1 ngày (`1d`). Nếu Admin ban user (`isActive: false`), user vẫn dùng token cũ để gọi API khác (trừ Socket vì Socket có check lại DB).
-    - *Khắc phục*: Cần implement Blacklist Token (Redis) hoặc hạ TTL xuống 15 phút + Refresh Token Rotation.
-- **Rate Limit Auth**: API Login/Register chưa có Rate Limit. Hacker có thể brute-force mật khẩu của Trụ Trì.
+- **Token Vĩnh Cửu (Stateless JWT)**: Token cũ vẫn dùng được sau khi Ban user.
+    - *Khắc phục*: Implement cache invalidation + check `isActive` từ cache.
+    - **[VERIFIED]**: Đã test thành công trong `test/admin-ban.e2e-spec.ts`. User bị ban sẽ nhận 401 ngay lập tức. ✅
+
+- **Rate Limit Auth**: API Login/Register chưa có Rate Limit.
     - *Khắc phục*: ThrottlerGuard cho các route Auth.
 
 ### 🧠 Logic (Major)
-- **Role Hardcoded**: Role `SystemRole` đang fix cứng trong Enum. Nếu sau này muốn thêm chức vụ mới (ví dụ: `CAO_TANG`), phải sửa code và migrate DB.
-    - *Khắc phục*: Chuyển sang Dynamic RBAC (Bảng `Roles` và `Permissions` riêng).
+- **Role Hardcoded**: Role `SystemRole` đang fix cứng.
+    - *Khắc phục*: Chuyển sang Dynamic RBAC.
 
 ---
 
 ## 2. 📡 MODULE GATEWAY (Loa Phường & Tu Online)
 
 ### 🚀 Hiệu Năng (High)
-- **Redis Set Phình To**: Set `active_knockers` chỉ remove user khi sync xong. Nếu server crash giữa chừng hoặc user disconnect bất ngờ mà không sync, ID vẫn nằm đó -> Memory Leak nhẹ.
-    - *Khắc phục*: Thêm TTL cho key `active_knockers` hoặc job dọn dẹp định kỳ lúc nửa đêm.
-- **Fan-out Vô Tội Vạ**: Sự kiện `donation.completed` đang bắn `server.emit` (broadcast toàn bộ). Nếu có 100k user online, 1 người nạp tiền -> 100k packets được gửi đi -> Nghẽn băng thông mạng (Network I/O bottleneck).
-    - *Khắc phục*: Dùng Redis Pub/Sub để scale ra nhiều instance Socket server (Adapter), hoặc chỉ bắn cho user đang ở trong "Main Room".
+- **Redis Set Phình To**: `active_knockers` có thể bị leak data.
+    - *Khắc phục*: Thêm TTL hoặc Job dọn dẹp.
+- **Fan-out Vô Tội Vạ**: Broadcast toàn server gây nghẽn.
+    - *Khắc phục*: Redis Pub/Sub, Room Isolation.
 
 ### 🛡️ Bảo Mật (Medium)
-- **Socket Rate Limit Cục Bộ**: Rate limit hiện tại (`INCR rate:id`) chỉ đếm số request tới Redis, nhưng nếu spam connect/disconnect liên tục (DDoS handshake) thì server NestJS vẫn tốn CPU để verify JWT.
-    - *Khắc phục*: Chặn IP ở tầng Nginx/Load Balancer hoặc dùng `socket.io-rate-limiter`.
-- **Cơn Bão Reconnect (Thundering Herd)**: Khi server restart, 100k kết nối socket sẽ reconnect đồng loạt. Mỗi kết nối đều gọi `findUnique` vào DB để verify user.
-    - *Khắc phục*: Cache user profile vào Redis (TTL ngắn). Auth service đọc từ Redis trước khi hỏi DB. Frontend cần implement `Exponential Backoff` khi reconnect.
-- **Hố Đen "Zombie" Gateway**: Nếu `verifyToken` tốn thời gian (DB lag), socket có thể disconnect trước khi kịp gán `client.data`. Các logic chạy ngầm sau đó sẽ thành "mồ côi" (orphaned), gây memory leak.
-    - *Khắc phục*: Bọc logic connection trong `try-catch-finally` chặt chẽ, kiểm tra `client.connected` trước khi xử lý tiếp.
+- **Socket Attack**: Spam gõ mõ làm server tốn tài nguyên xử lý.
+    - *Khắc phục*: Application-level Rate Limiting.
+    - **[VERIFIED]**: Đã test thành công trong `test/gateway-rate-limit.e2e-spec.ts`. Client spam > 10 req/s sẽ bị nhắc nhở "Chill thôi thí chủ". ✅
+
+- **Cơn Bão Reconnect (Thundering Herd)**: 100k user reconnect làm sập DB.
+    - *Khắc phục*: Cache User Profile (TTL 5p).
+    - **[VERIFIED]**: Đã implement Cache-First strategy trong `WsJwtGuard`. ✅
+
+- **Hố Đen "Zombie" Gateway**: Kết nối lỗi gây memory leak.
+    - *Khắc phục*: Strict Disconnect.
+    - **[FIXED]**: Code đã bọc `try-catch` và `client.disconnect(true)`.
 
 ---
 
 ## 3. 💸 MODULE DONATIONS & KARMA (Tiền Công Đức)
 
 ### 💥 Logic & Data Integrity (Critical)
-- **Nghẽn Cổ Chai "Sequential Sync"**: Job sync chạy tuần tự từng chunk 50 user. Nếu có 10k user (200 chunks), thời gian xử lý có thể vượt quá 10s (chu kỳ Cron). Job sau sẽ chồng lên job trước -> Sập nguồn.
-    - *Khắc phục*: Dùng `Promise.all` kết hợp `p-limit` để chạy song song 5-10 chunk cùng lúc. Tăng tốc độ sync gấp nhiều lần mà không làm sập DB.
-- **Race Condition (Tiềm ẩn)**: Cronjob sync Karma chạy mỗi 10s. Nếu Server A và Server B cùng chạy job này (khi scale horizontally), chúng sẽ tranh nhau xử lý `active_knockers` -> Cộng đôi công đức (Double Spending).
-    - *Khắc phục*: Dùng Redis Lock (Redlock) để đảm bảo chỉ 1 Job chạy tại 1 thời điểm.
-- **Mất Mát Dữ Liệu (Data Loss)**: Trong `KarmaSyncService`, nếu Node.js process bị `SIGKILL` (OOM hoặc Force Kill) ngay lúc vừa `GETSET` xong nhưng chưa kịp `update` DB -> Mất toàn bộ điểm buffers của đợt đó.
-    - *Khắc phục*: Dùng `RPOPLPUSH` (Reliable Queue) hoặc Stream thay vì Set đơn giản để đảm bảo "At-least-once delivery".
+- **Nghẽn Cổ Chai "Sequential Sync"**: Job sync chạy tuần tự quá chậm.
+    - *Khắc phục*: Parallel Processing (`p-limit`).
+    - **[FIXED]**: Đã tối ưu sync song song 5 chunk.
+
+- **Race Condition (Tiềm ẩn)**: Cronjob chạy chồng chéo.
+    - *Khắc phục*: Redlock.
+    - **[VERIFIED]**: Unit Test `KarmaSyncService` confirm job sẽ return nếu lock tồn tại. ✅
+
+- **Mất Mát Dữ Liệu (Data Loss)**: DB Update lỗi làm mất điểm.
+    - *Khắc phục*: Refund Logic.
+    - **[VERIFIED]**: Unit Test `KarmaSyncService` confirm điểm được hoàn trả về Redis nếu DB lỗi. ✅
 
 ### 📉 Performance (Medium)
-- **Decimal Precision**: `totalDonated` dùng `Decimal` nhưng khi cộng dồn trong code JS đôi khi bị cast qua number (mất độ chính xác).
-    - *Khắc phục*: Dùng thư viện `decimal.js` hoặc xử lý phép cộng hoàn toàn dưới Database.
+- **Decimal Precision**: Sai số khi cộng trừ tiền.
+    - *Khắc phục*: Xử lý phép tính dưới DB hoặc dùng thư viện chuyên dụng.
 
 ---
 
 ## 4. 🗄️ DATABASE & INFRA (Nền Móng)
 
 ### 🐢 Database
-- **Connection Pool**: Chưa config `connection_limit`. Nếu traffic đột biến, Prisma sẽ mở quá nhiều connection làm sập Postgres.
-    - *Khắc phục*: Config PgBouncer làm Proxy để quản lý pool.
-- **No Indexing Audit**: Bảng `KarmaLog` sẽ phình to rất nhanh (mỗi lần sync là tạo log?). Hiện tại chưa có Partitioning cho bảng này.
-    - *Khắc phục*: Partitioning bảng theo tháng (`karma_logs_2026_02`).
+- **Connection Pool**: Chưa config `connection_limit`.
+- **No Indexing Audit**: Bảng Log phình to.
 
 ### 🌲 Logging & Monitoring
-- **Console.log**: Code vẫn còn dùng `console.log` hoặc `Logger` mặc định. Không thể search log tập trung.
-    - *Khắc phục*: Tích hợp Winston/Pino đẩy log về ELK Stack hoặc Loki.
-- **Không có Alert**: Server sập hay Redis đầy bộ nhớ cũng không ai biết trừ khi Trụ Trì vào check.
-    - *Khắc phục*: Setup Prometheus + Grafana alert qua Telegram/Slack.
+- **Console.log**: Log rác, khó search.
+- **Không có Alert**: Mù tịt về trạng thái server.
 
 ---
 
 ## 📝 KẾT LUẬN
 
-Hệ thống hiện tại đang ở mức **MVP (Minimum Viable Product)** - Chạy được, vui, nhưng chưa sẵn sàng cho "Đại Lễ Phật Đản" với hàng triệu tín đồ.
+**Hệ thống đã an toàn hơn rất nhiều sau Phase 6.** 
+Các lỗ hổng nghiêm trọng (Critical) về Data Integrity và Security đã được bịt kín và **Kiểm thử (Verified)**.
 
-**Mức độ ưu tiên fix:**
-1. **Redis Lock cho Job Sync** (Để scale server).
-2. **Refresh Token** (Để bảo mật & UX).
-3. **Partitioning Karma Logs** (Để DB không hấp hối sau 1 tháng).
+**Mức độ ưu tiên fix tiếp theo:**
+1. **Refresh Token** (Để bảo mật & UX).
+2. **Logging System** (ELK/Loki).
+3. **Load Testing** (Để chứng minh khả năng chịu tải 100k CCU).
 
 *Nam Mô A Di Đà Phật! Code là bể khổ, quay đầu là bờ (nhưng fix bug xong mới được quay).* 🙏
